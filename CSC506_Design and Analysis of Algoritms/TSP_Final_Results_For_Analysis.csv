@@ -1,0 +1,49 @@
+,City_set,Algorithm,Best Distance,Execution Time,Peak Memory,Route Length
+0,test.txt,nearest neighbor,21,0.0,912,6
+1,test.txt,minimum spanning tree,21,0.0,1184,6
+2,test.txt,two-opt,19,0.0,256,6
+3,test.txt,nearest neighbor with 2-opt,19,0.0,912,6
+4,test.txt,MST with 2-opt,19,0.0,1184,6
+5,bays29_1.t,nearest neighbor,2258,0.0020029545,3224,30
+6,bays29_1.t,minimum spanning tree,2423,0.0,4536,30
+7,bays29_1.t,two-opt,2079,0.0030007362,768,30
+8,bays29_1.t,nearest neighbor with 2-opt,2064,0.0032184124,3224,30
+9,bays29_1.t,MST with 2-opt,2056,0.0020270348,4592,30
+10,eil51_2.tx,nearest neighbor,511,0.0020532608,3880,52
+11,eil51_2.tx,minimum spanning tree,584,0.0010194778,8256,52
+12,eil51_2.tx,two-opt,470,0.0040779114,1200,52
+13,eil51_2.tx,nearest neighbor with 2-opt,438,0.0053727627,3880,52
+14,eil51_2.tx,MST with 2-opt,446,0.0060887337,7976,52
+15,berlin52.t,nearest neighbor,8980,0.0029990673,3904,53
+16,berlin52.t,minimum spanning tree,10114,0.0022256374,8432,53
+17,berlin52.t,two-opt,7776,0.014329433,1336,53
+18,berlin52.t,nearest neighbor with 2-opt,8060,0.012291431,3904,53
+19,berlin52.t,MST with 2-opt,8023,0.017094374,8432,53
+20,kroA100_4.,nearest neighbor,27807,0.010123491,11312,101
+21,kroA100_4.,minimum spanning tree,27210,0.004000902,20888,101
+22,kroA100_4.,two-opt,23183,0.07613206,2488,101
+23,kroA100_4.,nearest neighbor with 2-opt,23239,0.067346096,11312,101
+24,kroA100_4.,MST with 2-opt,22512,0.10419917,20272,101
+25,pr107_6.tx,nearest neighbor,46680,0.010049105,11312,108
+26,pr107_6.tx,minimum spanning tree,54237,0.0050005913,18344,108
+27,pr107_6.tx,two-opt,46504,0.085048914,2640,108
+28,pr107_6.tx,nearest neighbor with 2-opt,44613,0.06228614,11312,108
+29,pr107_6.tx,MST with 2-opt,45446,0.055012226,18400,108
+30,gr120_3.tx,nearest neighbor,9351,0.0130028725,11312,121
+31,gr120_3.tx,minimum spanning tree,9190,0.0050013065,19176,121
+32,gr120_3.tx,two-opt,7520,0.09580898,2968,121
+33,gr120_3.tx,nearest neighbor with 2-opt,7704,0.078389406,11312,121
+34,gr120_3.tx,MST with 2-opt,7325,0.05879593,19232,121
+35,pa561_5.tx,nearest neighbor,3422,0.35100865,54152,562
+36,pa561_5.tx,minimum spanning tree,3963,0.11284399,80616,562
+37,pa561_5.tx,two-opt,3066,3.9028125,12500,562
+38,pa561_5.tx,nearest neighbor with 2-opt,2953,3.1718066,168540,562
+39,pa561_5.tx,MST with 2-opt,3028,2.9227211,80616,562
+41,test.txt,genetic,19,28.322132,152528,6
+42,bays29_1.t,genetic,2033,46.240543,158048,30
+43,eil51_2.tx,genetic,436,55.88693,229600,52
+44,berlin52.t,genetic,7991,57.090878,159128,53
+45,kroA100_4.,genetic,21958,90.190605,185896,101
+46,pr107_6.tx,genetic,47267,95.09629,194536,108
+47,gr120_3.tx,genetic,7718,105.31907,277432,121
+48,pa561_5.tx,genetic,6760,2581.9558,2087100,562

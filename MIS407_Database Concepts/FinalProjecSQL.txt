@@ -1,0 +1,238 @@
+CREATE TABLE customer (
+		customer_id serial PRIMARY KEY,
+		customer_first_name VarChar NOT NULL,
+		customer_last_name VarChar NOT NULL,
+		customer_address VarChar,
+		customer_city VarChar,
+		customer_state Char(2),
+		customer_zip integer,
+		customer_email VarChar NOT NULL,
+		customer_phone VarChar NOT NULL	
+);
+
+
+CREATE TABLE payment (
+		payment_id serial PRIMARY KEY,
+		card_number Char(19) NOT NULL,
+		cvc Char(3) NOT NULL,
+		expiration_date date NOT NULL
+);
+
+
+CREATE TABLE employee (
+		employee_id serial PRIMARY KEY,
+		employee_first_name VarChar,
+		employee_last_name VarChar,
+		employee_address VarChar,
+		employee_city VarChar,
+		employee_state Char(2),
+		employee_zip integer,
+		employee_phone VarChar NOT NULL,
+		employee_email VarChar NOT NULL		
+);
+
+CREATE TABLE supplier ( 
+		supplier_id serial PRIMARY KEY,
+		supplier_name VarChar,
+		supplier_address VarChar,
+		supplier_city VarChar,
+		supplier_state Char(2),
+		supplier_zip integer,
+		supplier_phone VarChar NOT NULL,
+		supplier_email VarChar NOT NULL
+);
+
+CREATE TABLE insurance_policy (
+		insurance_id serial PRIMARY KEY,
+		deductable money,
+		premium money,
+		provider VarChar
+);
+CREATE TABLE power_supply(
+		power_supply_id serial PRIMARY KEY,
+		power_supply_description VarChar NOT NULL
+);
+
+CREATE TABLE manufacturer(
+		manufacturer_id serial PRIMARY KEY,
+		manufacturer_name VarChar NOT NULL
+);
+
+CREATE TABLE use(
+		use_id serial PRIMARY KEY,
+		use_description VarChar NOT NULL
+);
+
+CREATE TABLE status(
+		status_id serial PRIMARY KEY,
+		status_description VarChar NOT NULL
+);
+
+CREATE TABLE tool (
+		tool_id serial PRIMARY KEY,
+		tool_name VarChar,
+		serial_number VarChar,
+		purchase_date date,
+		purchase_price money,
+		rental_fee money,
+		power_supply_id integer REFERENCES power_supply ON DELETE CASCADE ON UPDATE CASCADE,
+		manufacturer_id integer REFERENCES manufacturer ON DELETE CASCADE ON UPDATE CASCADE,
+		use_id integer REFERENCES use ON DELETE CASCADE ON UPDATE CASCADE,
+		status_id integer REFERENCES status ON DELETE CASCADE ON UPDATE CASCADE,
+		insurance_id integer REFERENCES insurance_policy ON DELETE CASCADE ON UPDATE CASCADE,
+		supplier_id integer REFERENCES supplier ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE TABLE tool_rental (
+		tool_rental_id serial PRIMARY KEY,
+		rental_date date NOT NULL,
+		due_date date NOT NULL,
+		active boolean NOT NULL,
+		insurance boolean NOT NULL,
+		customer_id integer REFERENCES customer ON DELETE CASCADE ON UPDATE CASCADE,
+		payment_id integer REFERENCES payment ON DELETE CASCADE ON UPDATE CASCADE,
+		employee_id integer REFERENCES employee ON DELETE CASCADE ON UPDATE CASCADE,
+		tool_id integer REFERENCES tool ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE FUNCTION count_rental() RETURNS TRIGGER 
+AS $count_rental$
+BEGIN
+	if (select count(*) from tool_rental 
+	WHERE tool_rental.active = true and tool_rental.customer_id = new.customer_id) >= 3 
+	then
+	RAISE EXCEPTION 'This customer has already rented 3 tools';
+	else
+	return new;
+	END IF;
+END
+$count_rental$ LANGUAGE plpgsql;
+
+CREATE TRIGGER count_rental BEFORE INSERT
+ON tool_rental
+For EACH ROW
+EXECUTE PROCEDURE count_rental();
+
+INSERT INTO customer (customer_first_name,customer_last_name,customer_address,
+		customer_city,customer_state,customer_zip,customer_email,customer_phone) VALUES	
+('john','smith','100 N. 7th St.','Wellington','CO',80549,'johnsmith@gmail.com','970-123-4567'),
+('jason','borne','200 S. 3rd St.','Windsor','CO',80550,'jasonborne@yahoo.com','307-231-0039'),
+('john','Wick','234 E. Walnut St.','Severance','CO',80550,'johnwick@gmail.com','970-231-0938'),
+('Bill','Thornton','123 W. Oak St.','Ft. Collins','CO',80524,'billthornton@gmail.com','970-123-4567'),
+('Jane','Doe','123 S. 23rd St.','Kersey','CO','80437','janedoe@gmail.com','970-234-0038');
+
+
+INSERT INTO payment(card_number,cvc,expiration_date) VALUES
+('1234-1234-1234-1234',234,'10/30/22'),
+('1234-3454-3838-9399',678,'10/30/23'),
+('1256-3838-9392-0083',839,'09/30/24'),
+('1209-9393-0098-3748',789,'09/30/24'),
+('3902-7383-8938-9238',456,'07/30/24');
+
+
+INSERT INTO employee(employee_first_name,employee_last_name,employee_address,employee_city,employee_state,
+			employee_zip,employee_email,employee_phone) VALUES
+('susan','smith','100 N. 10th St.','Wellington','CO',80549,'susansmith@gmail.com','970-133-4267'),
+('jane','borne','200 S. 12rd St.','Windsor','CO',80550,'janeborne@yahoo.com','307-211-0039'),
+('josh','Wick','234 E. pine St.','Severance','CO',80550,'joshwick@gmail.com','970-222-0938'),
+('trent','Thornton','123 W. birch St.','Ft. Collins','CO',80524,'trentthornton@gmail.com','970-153-4567'),
+('John','Doe','123 S. 3rd St.','Kersey','CO','80437','johndoe@gmail.com','970-236-0038');
+
+INSERT INTO supplier(supplier_name,supplier_address,supplier_city,supplier_state,supplier_zip,supplier_email,
+			supplier_phone) VALUES
+('NOCO Tools','10 N. 10th St.','Wellington','CO',80549,'NOCOtool@gmail.com','970-132-4267'),
+('Poudre Supply','392 S. 12th St.','Windsor','CO',80550,'Poudresupply@yahoo.com','970-211-2239'),
+('Weld County Tools','344 pine St.','Severance','CO',80550,'WELDCOtools@gmail.com','970-223-0948'),
+('Fort Collins Machine and Tool','8923 birch St.','Ft. Collins','CO',80524,'FOCOMT@gmail.com','970-173-4127'),
+('ACME Suppliers','123 S. 3rd St.','Johnstown','CO','80447','ACMESupply@gmail.com','970-216-1238');
+
+INSERT INTO insurance_policy (deductable,premium,provider)VALUES
+(100,500,'ACME Insurance'),
+(200,1000,'ACME Insurance'),
+(100, 500,'NOCO Insurance'),
+(200,1000,'NOCO Insurance'),
+(300,1500,'FOCO Insurance');
+
+INSERT INTO power_supply(power_supply_description) VALUES
+('110 Volt'),
+('220 Volt'),
+('Battery'),
+('Gas');
+
+INSERT INTO manufacturer(manufacturer_name) VALUES
+('Makita'),
+('Dewalt'),
+('Millwaukee'),
+('Porter Cable'),
+('Hilti');
+
+
+INSERT INTO use(use_description) VALUES
+('Garden'),
+('Woodworking'),
+('Electical'),
+('Plumbing'),
+('Metal');
+
+
+INSERT INTO status(status_description) VALUES
+('Rented'),
+('Maintenance'),
+('Available'),
+('Missing');
+
+INSERT INTO tool (tool_name,serial_number,purchase_date,purchase_price,rental_fee,power_supply_id,manufacturer_id,
+		use_id,status_id,insurance_id,supplier_id) VALUES
+('7" circular saw','dk37893','10/20/19',80,10,1,1,2,3,1,2),
+('1hp weedeater','3289893','10/20/19',300,25,4,4,2,3,1,2),
+('12" Miter saw','dk89238','10/20/19',200,20,1,1,2,3,1,2),
+('rototiller','2323843879','10/20/19',600,50,4,4,2,3,3,5),
+('table saw','348923','10/20/19',300,50,1,1,2,3,2,3);
+
+
+INSERT INTO tool_rental (rental_date,due_date,active,insurance,customer_id,payment_id,employee_id,tool_id) VALUES
+('5/6/20','5/7/20',false,true,1,1,1,1),
+('7/30/20','7/30/20',false,true,2,2,2,2),
+('6/21/20','6/21/20',false,true,3,3,3,3),
+('4/18/20','4/19/21',false,true,4,4,4,4),
+('4/18/20','4/19/21',false,true,5,5,5,5);
+
+
+INSERT INTO tool_rental (rental_date,due_date,active,insurance,customer_id,payment_id,employee_id,tool_id) VALUES
+('10/09/21','10/15/21',true,true,1,1,1,2),
+('10/09/21','10/15/21',true,true,1,1,1,3),
+('10/09/21','10/15/21',true,true,1,1,1,4);
+
+
+SELECT*FROM customer NATURAL JOIN tool_rental NATURAL JOIN payment NATURAL JOIN employee 
+			NATURAL JOIN tool NATURAL JOIN supplier NATURAL JOIN manufacturer 
+			NATURAL JOIN use NATURAL JOIN power_supply NATURAL JOIN status NATURAL JOIN insurance_policy;
+
+
+INSERT INTO tool_rental (rental_date,due_date,active,insurance,customer_id,payment_id,employee_id,tool_id) VALUES
+('10/01/21','10/3/21',false,true,4,1,1,1),
+('10/02/21','10/4/21',false,true,5,2,2,2),
+('10/8/21','10/13/21',false,true,5,3,3,3);
+
+SELECT customer_id, customer_first_name, customer_address, customer_zip FROM customer
+order by customer_id;
+
+
+
+Select tool_rental_id, tool_name, rental_date from tool_rental natural join tool
+WHERE current_date-rental_date<=30;
+
+UPDATE customer
+SET customer_last_name='smith'
+WHERE customer_id=5;
+
+Select customer_first_name, customer_last_name from customer
+order by customer_id;
+
+DELETE FROM customer
+where customer_id=5;
+
+select*from customer;
+

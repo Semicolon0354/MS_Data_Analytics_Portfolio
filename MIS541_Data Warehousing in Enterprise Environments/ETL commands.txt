@@ -1,0 +1,197 @@
+EXTRACT
+--copy the store manager data for the store dimension to csv 
+copy(select store.store_id, first_name, last_name, address, city, country, email, username, picture from store inner join (staff inner join (address inner join (city inner join country using(country_id)) using(city_id))using(address_id)) on store.manager_staff_id=staff.staff_id)
+to'/users/public/dim_store.manager.csv'
+delimiter ','
+csv header;
+
+--copy the remaining store dimension data to csv  
+copy(select store.store_id, address, city, country from store inner join (address inner join (city inner join country using(country_id)) using(city_id))using(address_id))
+to'/users/public/dim_store.csv'
+delimiter ','
+csv header;
+
+--copy staff dimension data to csv
+copy (select staff_id, first_name, last_name, address, city, country, email, username, picture from staff inner join (address inner join (city inner join country using(country_id)) using(city_id))using(address_id))
+to'/users/public/dim_staff.csv'
+delimiter ','
+csv header;
+
+--copy actor dimension data to csv
+copy (select actor_id, first_name, last_name from actor)
+to '/users/public/dim_actor.csv'
+delimiter ','
+csv header;
+
+--copy category dimension data to csv
+copy (select category_id, name from category)
+to '/users/public/dim_category.csv'
+delimiter ','
+csv header;
+
+--copy customer dimension data to csv
+copy (select customer_id, first_name, last_name, email, address, city, country, active from customer inner join (address inner join (city inner join country using(country_id)) using(city_id))using (address_id))
+to '/users/public/dim_customer.csv'
+delimiter ','
+csv header;
+
+--copy data except for original language for the film dimension to csv 
+copy (select film_id, title, release_year, language.name, length, replacement_cost, rating, description, special_features 
+	  from film inner join language using (language_id) )
+to '/users/public/dim_film_no_orig_lang.csv'
+delimiter ','
+csv header;
+
+--copy original language data for film dimension to csv
+copy (select film_id, language.name
+	  from film inner join language on (film.original_language_id=language.language_id) )
+to '/users/public/dim_film_orig_lang.csv'
+delimiter ','
+csv header;
+
+--copy rental fact data to csv
+copy (select date(rental_date), film_id, actor_id, payment.customer_id, payment.staff_id, 
+		category_id, store_id, date(return_date), date(payment_date), rental_id, amount
+from payment inner join (rental inner join (inventory inner join(film inner join (film_actor inner join film_category 
+	 using(film_id)) using(film_id))using(film_id))using(inventory_id)) using(rental_id))
+to '/users/public/rental_fact.csv'
+delimiter ','
+csv header;
+
+LOAD
+
+--copy store manager data from csv to store dimension table
+copy store(store_id, manager_first_name, manager_last_name, manager_address, manager_city, manager_country, manager_email, manager_username, manager_picture)
+from '/users/public/dim_store.manager.csv'
+delimiter ','
+csv header;
+
+--create a temporary table for remaining store dimension table data
+create temp table temp_table1(
+	store_id integer,
+	store_address character varying(50),
+	store_city character varying(50),
+	store_country character varying(50)
+);
+
+--copy remaining store dimension data to temporary table
+copy temp_table1(store_id, store_address, store_city, store_country)
+from '/users/public/dim_store.csv'
+delimiter ','
+csv header;
+
+--update store dimension table with remaining data from temporary table
+Update store 
+set (store_address, store_city, store_country)=
+(select store_address, store_city, store_country
+From temp_table1 where store.store_id=temp_table1.store_id);
+
+--drop the temporary table
+drop table temp_table1;
+
+--copy data from csv to staff dimension table
+copy staff
+from '/users/public/dim_staff.csv'
+delimiter ','
+csv header;
+
+--copy data from csv to actor dimension table
+copy actor
+from '/users/public/dim_actor.csv'
+delimiter ','
+csv header;
+
+--copy data from csv to category dimension table
+copy category
+from '/users/public/dim_category.csv'
+delimiter ','
+csv header;
+
+-- copy data from csv to customer dimension table
+copy customer
+from '/users/public/dim_customer.csv'
+delimiter ','
+csv header;
+
+--copy data except original language from csv to film dimension table
+copy film(film_id, title, release_year, language_name, length, replacement_cost, rating, description, special_features)
+	from '/users/public/dim_film_no_orig_lang.csv'
+delimiter ','
+csv header;
+
+--create temporary table for original language data
+create temp table temp_table1(
+film_id integer,
+original_language_name character(20)
+);
+
+--copy original language data from csv to temporary table
+copy temp_table1
+from '/users/public/dim_film_orig_lang.csv'
+delimiter ','
+csv header;
+
+--insert original language data from temporary table in to film dimension
+update film
+set original_language=(select original_language_name from temp_table1 where film.film_id=temp_table1.film_id);
+
+--drop temporary table
+drop table temp_table1;
+
+--copy date dimension data from csv
+copy date
+from '/users/public/dim_date1.txt'
+delimiter ','
+csv header;
+
+--create temporary table for rental fact table
+--temporary table includes columns for date and date keys
+--date values of date type were extracted from source database
+create temp table temp_fact_table(
+	date_key integer, 
+	rental_date date, 
+	film_key integer, 
+	actor_key integer, 
+	customer_key integer, 
+	staff_key integer, 
+	category_Key integer, 
+	store_key integer, 
+	rental_return_date_key integer,
+	rental_return_date date,
+	payment_date_key integer,
+	payment_date date,
+	rental_id integer,
+	payment_amount numeric(5,2)
+);
+
+--copy data from csv to rental fact table
+copy temp_fact_table(rental_date, film_key, actor_key, 
+					 customer_key, staff_key, category_key, 
+					 store_key, rental_return_date, payment_date, rental_id, payment_amount)
+from '/users/public/rental_fact.csv'
+delimiter ','
+csv header;
+
+--copy date key from date dimension for corresponding rental dates to temporary table
+update temp_fact_table
+set date_key=(select date_idfrom date where temp_fact_table.rental_date=date.date_name);
+
+--copy date key from date dimension for corresponding rental return date to temporary table
+update temp_fact_table
+set rental_return_date_key=(select date_id from date where temp_fact_table.rental_return_date=date.date_name);
+
+--alter rental_fact_id to automatically populate as surrogate key
+alter table rental_fact
+alter column rental_fact_id add generated always as identity;
+
+--delete rows with missing foregn key data due to not null constraint
+Delete from temp_fact_table
+where date_key is null or film_key is null or actor_key is null or 
+customer_key is null or staff_key is null or category_key is null or
+store_key is null or rental_return_date_key is null or payment_date_key is null;
+
+--insert data except dates from temporary table into rental fact table
+insert into rental_fact(date_key, film_key, actor_key, customer_key, staff_key, category_key, 
+	 store_key, rental_return_date, payment_date, rental_id, payment_amount)
+	select date_key, film_key, actor_key, customer_key, staff_key, category_key,
+	 store_key, rental_return_date_key, payment_date_key, rental_id, payment_amount from temp_fact_table; 
